@@ -1,0 +1,214 @@
+/* =====================================================================
+   src/styles/checkout.css — Scoped ONLY to .checkout-page
+   Clean, shadow-free, thin borders, aligned columns in summary
+   ===================================================================== */
+
+/* Page-scoped tokens (won’t bleed elsewhere) */
+.checkout-page{
+  --primary-700: #ff8a00;
+  --primary-600: #ff9900; /* brand */
+  --primary-500: #ffad33;
+  --primary-50:  #fff7ed;
+
+  --primary: var(--primary-600);
+  --ring: #ffe3c2;      /* subtle focus outline */
+  --border: #e5e7eb;
+  --ink: #0f172a;
+  --muted: #6b7280;
+
+  --warm-border: #ffdcb3;
+}
+
+/* ===== Head ===== */
+.checkout-page .checkout-head{ margin-bottom: 14px; }
+
+.checkout-page .checkout-title{
+  margin: 0 0 6px;
+  font-size: 1.72rem;
+  font-weight: 600;
+  letter-spacing: .1px;
+}
+
+.checkout-page .checkout-sub{
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+
+/* ===== Card (flat, warm outline) ===== */
+.checkout-page .card.checkout-card{
+  padding: 16px;
+  background: #fff;
+  border: 1px solid var(--warm-border);
+  border-radius: 14px;
+}
+
+.checkout-page .section-title{
+  margin: 0 0 10px;
+  font-size: 1.08rem;
+  font-weight: 700;
+  letter-spacing: .05px;
+}
+
+/* ===== Summary list — aligned columns ===== */
+.checkout-page .summary-list{
+  list-style: none;
+  margin: 8px 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.checkout-page .summary-line{
+  position: relative;
+  padding-left: 14px;                     /* space for brand dot */
+  display: grid;
+  /* title | qty | dot | price */
+  grid-template-columns: 1fr 34px 12px 110px;
+  column-gap: 8px;
+  align-items: baseline;
+}
+
+/* brand dot */
+.checkout-page .summary-line::before{
+  content: "";
+  position: absolute;
+  left: 0; top: .64em;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+/* left text */
+.checkout-page .sl-title{
+  color: var(--ink);
+  font-weight: 600;
+  min-width: 0;
+}
+
+/* right columns */
+.checkout-page .sl-mult{
+  color: var(--ink);
+  font-weight: 600;
+  text-align: right;                      /* aligns the “× 1” neatly */
+}
+
+.checkout-page .sl-sep{
+  color: #9aa3af;
+  text-align: center;                     /* the middle dot column */
+}
+
+.checkout-page .sl-price{
+  color: var(--ink);
+  font-weight: 700;
+  text-align: right;                      /* right edge alignment */
+  min-width: 110px;                       /* keeps the column stable */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
+  white-space: nowrap;
+}
+
+/* Total row */
+.checkout-page .summary-total{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px dashed #f2e5d3;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+.checkout-page .summary-total span{ font-size: 1rem; font-weight: 700; }
+.checkout-page .summary-total strong{
+  font-size: 1.08rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+/* ===== Actions row ===== */
+.checkout-page .checkout-actions{
+  margin-top: 14px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* =========================== Buttons (scoped, no shadows) ========= */
+.co-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  height: 46px;
+  padding: 0 16px;
+  border-radius: 10px;
+
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: .04px;
+
+  border: 1px solid var(--border);  /* minimal, clean border */
+  background: #fff;
+  color: var(--ink);
+
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+  /* No shadow or transform */
+}
+
+/* Minimal focus outline (no glow) */
+.co-btn:focus-visible{
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Outline (Back to Cart) — warm ring + border change */
+.co-btn--outline{
+  background: #fff;
+  border-color: var(--border);
+  color: var(--ink);
+}
+.co-btn--outline:hover{
+  background: #fff;
+  border-color: var(--primary);       /* change border color too */
+  box-shadow: 0 0 0 2px var(--ring);  /* warm ring */
+}
+.co-btn--outline:active{
+  background: #fff;
+  border-color: var(--primary-700);   /* darker on press */
+  box-shadow: 0 0 0 2px var(--ring);  /* keep ring */
+}
+
+/* Primary (Continue to Payment) — flat, tint on hover */
+.co-btn--primary{
+  color: #fff;
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.co-btn--primary:hover{
+  background: var(--primary-500);
+  border-color: var(--primary);
+}
+.co-btn--primary:active{
+  background: var(--primary-700);
+  border-color: var(--primary-700);
+}
+
+/* Disabled */
+.co-btn[disabled], .co-btn:disabled{
+  opacity: .6; cursor: not-allowed;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px){
+  .checkout-page .checkout-title{ font-size: 1.55rem; }
+  .checkout-page .card.checkout-card{ border-radius: 12px; }
+  .co-btn{ height: 44px; border-radius: 9px; }
+}
+
+@media (max-width: 560px){
+  .checkout-page .summary-line{
+    grid-template-columns: 1fr 30px 10px 92px; /* tighter columns on small screens */
+  }
+  .checkout-page .sl-price{ min-width: 92px; }
+}
