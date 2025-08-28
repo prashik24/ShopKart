@@ -1,0 +1,99 @@
+/* ================= Product Detail =======*/
+:root{
+  /* falls back if not already declared in your theme */
+  --primary:#ff9900;
+  --ring:#ffe8cc;
+  --border:#e5e7eb;
+}
+
+/* Layout */
+.pd-row{
+  display:flex;
+  gap:22px;
+  align-items:flex-start;
+}
+@media (max-width: 860px){
+  .pd-row{ flex-direction:column; }
+}
+
+.pd-image{
+  width: 420px;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background:#fff;
+  object-fit: contain;
+}
+
+.pd-info{
+  flex:1;
+  min-width: 280px;
+}
+
+.pd-info h2{
+  margin:0 0 6px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.pd-desc{
+  margin: 10px 0 14px;
+  color: #374151;
+  line-height: 1.45;
+}
+
+/* Price big + bold */
+.price{
+  margin: 6px 0 8px;
+  font-weight: 800;
+  font-size: 1.35rem;
+}
+
+/* ------------ Scoped CTA button (Add to Cart) ------------ */
+/* Only affects the button on this page because of the `pd-cta` class */
+.pd-cta{
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 12px;
+
+  /* solid brand style */
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #fff;
+
+  /* type & feel */
+  font-weight: 800;
+  letter-spacing: .2px;
+
+  transition:
+    background-color .15s ease,
+    border-color .15s ease,
+    box-shadow .15s ease,
+    transform .06s ease;
+}
+
+/* hover – slightly lighter fill & visible thin border */
+.pd-cta:hover{
+  background: color-mix(in oklab, var(--primary), #fff 16%);
+  border-color: color-mix(in oklab, var(--primary), #000 8%);
+}
+
+/* active/pressed – tiny depress + a tad lighter */
+.pd-cta:active{
+  background: color-mix(in oklab, var(--primary), #fff 26%);
+  border-color: color-mix(in oklab, var(--primary), #000 12%);
+  transform: translateY(1px);
+}
+
+/* keyboard focus ring */
+.pd-cta:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ring);
+}
+
+/* disabled safety (if you ever disable) */
+.pd-cta:disabled{
+  opacity: .6;
+  cursor: not-allowed;
+  transform: none;
+}
