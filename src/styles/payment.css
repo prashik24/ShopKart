@@ -1,0 +1,231 @@
+/* =====================================================================
+   Payment page — matches your warm, clean theme
+   ===================================================================== */
+/*
+.payment-page{
+  --warm: #fff7ed;
+  --warm-border: #ffd7a6;
+  --ring: #ffe8cc;
+}
+
+.payment-page .pay-head{ margin-bottom: 12px; }
+.payment-page .pay-title{
+  margin: 0 0 6px;
+  font-size: 1.72rem;
+  font-weight: 800;
+  letter-spacing: .1px;
+}
+.payment-page .pay-sub{ margin:0; color: var(--muted); font-size: 1.02rem; }
+
+.payment-page .pay-grid{
+  display:grid; grid-template-columns: 1fr 360px; gap:20px;
+}
+@media (max-width: 980px){ .payment-page .pay-grid{ grid-template-columns: 1fr; } }
+
+.payment-page .card{
+  background:#fff; border:1px solid var(--warm-border); border-radius:14px; padding:16px;
+  box-shadow: 0 10px 24px rgba(255,153,0,.06);
+}
+
+
+.payment-page .pay-card .section-title{
+  margin: 0 0 10px; font-size:1.08rem; font-weight:700; letter-spacing:.05px;
+}
+.payment-page .form-grid{
+  display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:10px;
+}
+@media (max-width:640px){ .payment-page .form-grid{ grid-template-columns: 1fr; } }
+.payment-page .field{ display:grid; gap:6px; }
+.payment-page label{ font-weight:600; color:#1f2937; }
+
+.payment-page .input{
+  width:100%; padding:10px 12px; border:1px solid var(--border);
+  border-radius:10px; background:#fff; color:var(--text); font:inherit;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.payment-page .input:focus{
+  outline:none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--ring); background:#fff;
+}
+
+
+.payment-page .pay-methods{
+  display:flex; gap:12px; margin:4px 0 10px;
+}
+.payment-page .radio{
+  display:flex; align-items:center; gap:8px;
+  background:#fff; border:1px solid var(--warm-border); border-radius:10px; padding:8px 12px;
+}
+.payment-page .radio input{ accent-color: var(--primary); }
+
+.payment-page .upi-field .muted{ color:#6b7280; font-size:.92rem; }
+
+.payment-page .pay-summary .section-title{ margin:0 0 8px; }
+.payment-page .sum-list{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.payment-page .sum-line{
+  display:grid; grid-template-columns: 52px 1fr auto; align-items:center; gap:10px;
+  border-bottom: 1px dashed #f2e5d3; padding-bottom:8px;
+}
+.payment-page .sum-thumb{ width:52px; height:52px; object-fit:contain; background:#fff7ed; border:1px solid var(--ring); border-radius:10px; }
+.payment-page .sum-meta .sum-title{ font-weight:700; }
+.payment-page .sum-meta .sum-sub{ color:#6b7280; }
+.payment-page .sum-price{ font-weight:800; font-variant-numeric: tabular-nums; }
+.payment-page .sum-total{
+  display:flex; justify-content:space-between; align-items:center; padding-top:10px; margin-top:4px; border-top:1px dashed #f2e5d3;
+}
+.payment-page .pay-note.err{ color:#b12704; margin:6px 0; }
+
+
+.payment-page .co-btn{
+  display:inline-flex; align-items:center; justify-content:center; height:46px; padding:0 16px;
+  border-radius:10px; border:1px solid var(--border);
+  font-size:1rem; font-weight:700; letter-spacing:.04px; cursor:pointer;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.payment-page .co-btn--primary{ background: var(--primary); border-color: var(--primary); color:#fff; }
+.payment-page .co-btn--primary:hover{ background: color-mix(in oklab, var(--primary), #fff 12%); }
+.payment-page .co-btn:disabled{ opacity:.6; cursor:not-allowed; } */
+/* ==================== ADD THESE LINES ==================== */
+.payment-page .pay-grid{
+  /* existing: display, columns, gap... */
+  align-items: start;           /* <-- prevents items from stretching vertically */
+}
+
+.payment-page .pay-card,
+.payment-page .pay-summary{
+  align-self: start;            /* <-- cards size to their content only */
+}
+/* ========================================================= */
+/* =====================================================================
+   Payment page — matches your warm, clean theme
+   ===================================================================== */
+
+.payment-page{
+  --primary: #ff9900;
+  --primary-700: #ff8a00;
+  --primary-500: #ffad33;
+  --ring: #ffe8cc;
+  --warm: #fff7ed;
+  --warm-border: #ffd7a6;
+  --border: #e5e7eb;
+  --text: #0f172a;
+  --muted: #6b7280;
+}
+
+.payment-page .pay-head{ margin-bottom: 12px; }
+.payment-page .pay-title{
+  margin: 0 0 6px;
+  font-size: 1.72rem;
+  font-weight: 600;
+  letter-spacing: .1px;
+}
+.payment-page .pay-sub{ margin:0; color: var(--muted); font-size: 1.02rem; }
+
+.payment-page .pay-grid{
+  display:grid; grid-template-columns: 1fr 360px; gap:20px;
+}
+@media (max-width: 980px){ .payment-page .pay-grid{ grid-template-columns: 1fr; } }
+
+.payment-page .card{
+  background:#fff; border:1px solid var(--warm-border); border-radius:14px; padding:16px;
+  box-shadow: 0 10px 24px rgba(255,153,0,.06);
+}
+
+/* left card */
+.payment-page .pay-card .section-title{
+  margin: 0 0 10px; font-size:1.08rem; font-weight:700; letter-spacing:.05px;
+}
+.payment-page .form-grid{
+  display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:10px;
+}
+@media (max-width:640px){ .payment-page .form-grid{ grid-template-columns: 1fr; } }
+.payment-page .field{ display:grid; gap:6px; }
+.payment-page label{ font-weight:600; color:#1f2937; }
+
+/* inputs */
+.payment-page .input{
+  width:100%; padding:10px 12px; border:1px solid var(--border);
+  border-radius:10px; background:#fff; color:var(--text); font:inherit;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.payment-page .input:focus{
+  outline:none; border-color: var(--primary); box-shadow: 0 0 0 2px var(--ring); background:#fff;
+}
+/* invalid highlight (auth.css style) */
+.payment-page .input.invalid{
+  border-color:#ef4444; background:#fff7f7;
+}
+
+/* payment methods */
+.payment-page .pay-methods{
+  display:flex; gap:12px; margin:4px 0 10px;
+}
+.payment-page .radio{
+  display:flex; align-items:center; gap:8px;
+  background:#fff; border:1px solid var(--warm-border); border-radius:10px; padding:8px 12px;
+}
+.payment-page .radio input{ accent-color: var(--primary); }
+
+.payment-page .upi-field .muted{ color:#6b7280; font-size:.92rem; }
+
+/* notes */
+.payment-page .pay-note{
+  margin-top: 8px;
+  font-size: .95rem;
+  border-radius: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+}
+.payment-page .pay-note.warn{
+  color: #7a4a00;
+  background: #fff8f0;
+  border-color: var(--warm-border);
+}
+.payment-page .pay-note.err{
+  color:#b12704;
+  background:#fff7f7;
+  border-color:#ffd0c8;
+}
+
+/* right summary */
+.payment-page .pay-summary .section-title{ margin:0 0 8px; }
+.payment-page .sum-list{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.payment-page .sum-line{
+  display:grid; grid-template-columns: 52px 1fr auto; align-items:center; gap:10px;
+  border-bottom: 1px dashed #f2e5d3; padding-bottom:8px;
+}
+.payment-page .sum-thumb{ width:52px; height:52px; object-fit:contain; background:#fff7ed; border:1px solid var(--ring); border-radius:10px; }
+.payment-page .sum-meta .sum-title{ font-weight:700; }
+.payment-page .sum-meta .sum-sub{ color:#6b7280; }
+.payment-page .sum-price{ font-weight:800; font-variant-numeric: tabular-nums; }
+.payment-page .sum-total{
+  display:flex; justify-content:space-between; align-items:center; padding-top:10px; margin-top:4px; border-top:1px dashed #f2e5d3;
+}
+
+/* ===== Button — same yellow look, single thin border, lighter text weight */
+.payment-page .pay-cta{ margin-top: 10px; }
+
+.payment-page .co-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:46px; padding:0 16px; border-radius:12px;
+  font-size:1rem; font-weight:700; letter-spacing:.2px; cursor:pointer;
+  border:1px solid var(--primary);                 /* single thin border */
+  background: var(--primary);                      /* solid brand */
+  color:#fff;
+  transition: background-color .15s ease, border-color .15s ease, box-shadow .15s ease, transform .06s ease, filter .12s ease;
+}
+
+.payment-page .co-btn.co-btn--primary:hover{
+  background: color-mix(in oklab, var(--primary), #fff 16%);
+  border-color: color-mix(in oklab, var(--primary), #000 8%);
+}
+
+.payment-page .co-btn.co-btn--primary:active{
+  background: color-mix(in oklab, var(--primary), #fff 26%);
+  border-color: color-mix(in oklab, var(--primary), #000 12%);
+  transform: translateY(1px);
+}
+
+.payment-page .co-btn:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 3px var(--ring);               /* soft orange ring */
+}
