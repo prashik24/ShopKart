@@ -1,36 +1,35 @@
-import jwt from 'jsonwebtoken';
++import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { User } from '../models/User.js';
 
 const isProd = process.env.NODE_ENV === 'production';
 
 /**
- * Sign a short user payload into a JWT
+ * Create a signed session token with a small payload.
  */
 export function signSession(user) {
-  const token = jwt.sign({ uid: user._id.toString() }, config.jwt.secret, {
-    expiresIn: `${config.jwt.expiresDays}d`
-  });
-  return token;
+  return jwt.sign(
+    { uid: user._id.toString() },
+    config.jwt.secret,
+    { expiresIn: `${config.jwt.expiresDays}d` }
+  );
 }
 
 /**
- * Set auth cookie with environment-aware flags.
- * - In production (Render), frontend & backend are usually on different domains,
- *   so we need SameSite=None; Secure
- * - In local dev (http), use SameSite=lax; Secure=false
+ * Set the auth cookie with environment-aware flags.
+ * - Prod: cross-site → SameSite=None; Secure=true (required by browsers)
+ * - Dev:  SameSite=Lax; Secure=false (localhost over http)
  */
 export function setAuthCookie(res, token) {
   const cookieOptions = {
     httpOnly: true,
-    // Cross-site cookie support in prod (frontend & backend on different domains)
     sameSite: isProd ? 'none' : 'lax',
-    secure: isProd, // must be true when SameSite=None
+    secure: isProd,
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
     path: '/'
   };
 
-  // Optional: allow overriding the cookie domain via env (useful with custom domains)
+  // Optional: if you have a custom API domain and want to scope the cookie
   if (process.env.JWT_COOKIE_DOMAIN) {
     cookieOptions.domain = process.env.JWT_COOKIE_DOMAIN;
   }
@@ -39,7 +38,7 @@ export function setAuthCookie(res, token) {
 }
 
 /**
- * Clear the auth cookie
+ * Clear the auth cookie (mirror flags).
  */
 export function clearAuthCookie(res) {
   res.clearCookie(config.jwt.cookieName, {
@@ -50,7 +49,7 @@ export function clearAuthCookie(res) {
 }
 
 /**
- * Strict guard — responds 401 if not authenticated
+ * Strict guard — respond 401 when no/invalid session.
  */
 export async function requireUser(req, res, next) {
   try {
@@ -69,8 +68,7 @@ export async function requireUser(req, res, next) {
 }
 
 /**
- * Soft guard — NEVER 401s; if a valid cookie exists sets req.user, otherwise leaves it undefined
- * Useful for "session probe" endpoints and pages that can render with or without a user.
+ * Soft guard — never 401s; sets req.user if a valid cookie is present.
  */
 export async function maybeUser(req, _res, next) {
   try {
@@ -80,8 +78,8 @@ export async function maybeUser(req, _res, next) {
     const payload = jwt.verify(token, config.jwt.secret);
     const user = await User.findById(payload.uid).lean();
     if (user) req.user = user;
-  } catch (_e) {
-    // ignore invalid/expired tokens
+  } catch {
+    // ignore invalid/expired cookies
   }
   next();
 }
