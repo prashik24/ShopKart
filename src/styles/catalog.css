@@ -1,0 +1,231 @@
+/* ===================== Catalog Layout ===================== */
+.catalog {
+  display: grid;
+  grid-template-columns: 300px 1fr; /* wider sidebar */
+  gap: 20px;
+}
+@media (max-width: 980px) {
+  .catalog { grid-template-columns: 1fr; }
+}
+
+/* ===================== Catalog Toolbar (refined) ===================== */
+.catalog-toolbar {
+  background: linear-gradient(180deg, #fff 0%, #fff7ed 160%);
+  border: 1px solid #ffd7a6;
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  box-shadow:
+    0 10px 20px rgba(255, 153, 0, 0.06),
+    0 0 0 2px rgba(255, 153, 0, 0.05);
+}
+
+.catalog-toolbar .breadcrumb {
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.catalog-toolbar .toolbar-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Unify control size & polish */
+.catalog-toolbar .toolbar-actions .input.list-search,
+.catalog-toolbar .toolbar-actions .select {
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid #ffd7a6;
+  background: #fff;
+  padding: 0 12px;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+/* Wider, warm-tinted search */
+.catalog-toolbar .toolbar-actions .input.list-search {
+  min-width: 280px;
+  max-width: 360px;
+  background: #fffdf7;
+}
+
+.catalog-toolbar .toolbar-actions .input.list-search:focus,
+.catalog-toolbar .toolbar-actions .select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--ring);
+  background: #fff;
+}
+.catalog-toolbar .toolbar-actions .input.list-search:hover,
+.catalog-toolbar .toolbar-actions .select:hover {
+  background: #fffef9;
+}
+.catalog-toolbar .toolbar-actions .input.list-search::placeholder {
+  color: #9ca3af;
+}
+
+/* small screens */
+@media (max-width: 640px) {
+  .catalog-toolbar { padding: 12px; }
+  .catalog-toolbar .toolbar-actions { width: 100%; }
+  .catalog-toolbar .toolbar-actions .input.list-search {
+    flex: 1; min-width: 0;
+  }
+}
+
+/* ===================== Category count chips ===================== */
+.cat-counts{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.cat-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 10px;
+  background:#fff;
+  border:1px solid #ffd7a6;
+  border-radius:12px;
+  box-shadow:0 2px 6px rgba(255,153,0,.06);
+  font-weight:700;
+  color:#1f2937;
+}
+.cat-chip .cat-name{ font-weight:800; }
+.cat-chip .cat-sep{ opacity:.55; }
+.cat-chip .cat-num{ font-variant-numeric: tabular-nums; }
+.cat-chip .cat-label{ font-weight:600; color:#7a4a00; }
+
+@media (max-width:640px){
+  .cat-counts{ gap:6px; }
+  .cat-chip{ padding:5px 8px; }
+}
+
+/* ===================== Filters — larger, warm, clean ===================== */
+.filters {
+  position: sticky;
+  top: calc(var(--nav-total-h) + 12px);
+  height: fit-content;
+  padding: 18px 16px;
+  border-radius: 18px;
+
+  background: linear-gradient(180deg, #fff 0%, #fff6e9 120%);
+  border: 1px solid #ffd7a6;
+  box-shadow:
+    0 10px 24px rgba(255, 153, 0, 0.06),
+    0 0 0 3px rgba(255, 153, 0, 0.08);
+
+  scrollbar-gutter: stable both-edges;
+}
+.filters::-webkit-scrollbar { width: 10px }
+.filters::-webkit-scrollbar-track { background: transparent }
+.filters::-webkit-scrollbar-thumb { background: #efdcc4; border-radius: 8px }
+.filters:hover::-webkit-scrollbar-thumb { background: #e4c89f }
+
+/* Title */
+.filters .filter-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.08rem;
+  color: #1f2937;
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px dashed #f2e5d3;
+}
+.filters .filter-title::before {
+  content: "⚙";
+  font-size: 1rem;
+  opacity: .65;
+}
+
+/* Groups */
+.filter-group {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px dashed #f2e5d3;
+}
+
+/* ===================== Option rows ===================== */
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .15s ease, border-color .15s ease;
+  margin-bottom: 6px;
+}
+.check:hover { background: #fff8f0 }
+
+/* Custom checkbox */
+.filters .check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  outline: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1.6px solid #d9dde6;
+  background: #fff;
+  display: grid;
+  place-content: center;
+  transition: 0.15s ease;
+}
+
+/* Tick icon */
+.filters .check input[type="checkbox"]::after {
+  content: "";
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  clip-path: polygon(14% 44%, 0 62%, 40% 98%, 100% 22%, 84% 6%, 40% 76%);
+  transform: scale(0);
+  transition: transform 0.12s ease-in-out;
+}
+
+/* Checked state (only the box is orange) */
+.filters .check input[type="checkbox"]:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.filters .check input[type="checkbox"]:checked::after {
+  transform: scale(1);
+}
+
+/* No full-row fill when checked */
+.check:has(input:checked) { background: transparent; }
+
+/* Clear button in panel */
+.filters .btn {
+  width: 100%;
+  margin-top: 10px;
+  border-radius: 999px;
+  border-color: #ffd7a6;
+  background: #fffdf8;
+}
+.filters .btn:hover { background: #ffeedd }
+
+/* ===================== Product Grid & Cards ===================== */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+@media (max-width: 980px) {
+  .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .grid { grid-template-columns: 1fr; }
+}
