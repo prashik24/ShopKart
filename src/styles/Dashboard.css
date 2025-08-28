@@ -1,0 +1,199 @@
+/* =====================================================================
+   Profile + Dashboard — warm, clean, matches site theme
+   ===================================================================== */
+.dashboard-page{
+  --warm: #fff7ed;
+  --warm-border: #ffd7a6;
+  --ring: #ffe8cc;
+  --ink: #0f172a;
+}
+
+/* Head */
+.dashboard-page .dash-head{ margin-bottom:12px; }
+.dashboard-page .dash-title{ margin:0 0 6px; font-size:1.72rem; font-weight:600; letter-spacing:.1px; }
+.dashboard-page .dash-sub{ margin:0; color:var(--muted); }
+
+/* 2-column grid */
+.dashboard-page .dash-grid{
+  display:grid; grid-template-columns:420px 1fr; gap:18px;
+}
+@media (max-width:1020px){ .dashboard-page .dash-grid{ grid-template-columns:1fr; } }
+
+/* Card */
+.dashboard-page .card{
+  background:#fff;
+  border:1px solid var(--warm-border);
+  border-radius:14px;
+  padding:16px;
+  box-shadow:0 10px 24px rgba(255,153,0,.06);
+}
+
+/* ===== Profile card ===== */
+.dashboard-page .prof-card .prof-top{
+  display:flex; gap:12px; align-items:center; margin-bottom:10px;
+}
+.dashboard-page .avatar{
+  width:64px; height:64px; border-radius:50%;
+  display:grid; place-items:center;
+  background:#fffdf7; border:1px solid var(--warm-border);
+  font-weight:800; color:var(--primary); font-size:1.2rem;
+}
+
+/* Name → email → member since spacing */
+.dashboard-page .who .n{ font-weight:600; margin:0 0 4px; line-height:1.25; }
+.dashboard-page .who .e{ color:#6b7280; margin:2px 0 6px; line-height:1.25; }
+.dashboard-page .who .m{ color:#7a4a00; font-weight:600; margin-top:4px; line-height:1.25; }
+
+/* Form controls */
+.dashboard-page .prof-form{ display:grid; gap:10px; margin-top:6px; }
+.dashboard-page .field{ display:grid; gap:6px; }
+.dashboard-page label{ font-weight:600; color:#1f2937; }
+.dashboard-page .input,
+.dashboard-page .select{
+  width:100%;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#fff;
+  color:var(--ink);
+  font:inherit;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.dashboard-page .input:focus,
+.dashboard-page .select:focus{
+  outline:none; border-color:var(--primary); box-shadow:0 0 0 2px var(--ring);
+}
+
+/* ---- Gender select: native menu tidy (NO outer gap) ---- */
+/* Add className="select select--menu" on the <select> */
+.dashboard-page .select.select--menu{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, #ff9900 50%),
+    linear-gradient(-45deg, transparent 50%, #ff9900 50%),
+    linear-gradient(#ff9900 0 0);
+  background-position:
+    calc(100% - 20px) 52%,
+    calc(100% - 12px) 52%,
+    calc(100% - 18px) 50%;
+  background-size:7px 7px, 7px 7px, 1px 18px;
+  background-repeat:no-repeat;
+  padding-right:36px;
+}
+
+/* The fix: margins on options cause the big space. Keep margin:0. */
+.dashboard-page .select--menu option{
+  margin:0;                      /* <- fixes unwanted spacing */
+  padding:8px 10px;              /* compact row height */
+  line-height:1.25;
+  border-radius:8px;
+  background-clip:padding-box;
+}
+.dashboard-page .select--menu option:hover{ background:#fff8f0; }
+.dashboard-page .select--menu option:checked{
+  background:#fff3e0;
+  color:#7a4a00;
+  font-weight:700;
+}
+
+/* Notes */
+.dashboard-page .note.ok{
+  background:#f0fff4; border:1px solid #b7f7c2; color:#065f46;
+  padding:8px 10px; border-radius:10px; font-weight:600; font-size:.95rem;
+}
+
+.dashboard-page .prof-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:2px; }
+
+/* ===== Orders ===== */
+.dashboard-page .section-title{
+  margin:0 0 10px; font-size:1.08rem; font-weight:700; letter-spacing:.05px;
+}
+.dashboard-page .orders-list{ list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.dashboard-page .order-row{
+  display:grid; grid-template-columns:1fr 180px 120px; gap:10px; align-items:center;
+  padding:12px 8px; border-top:1px dashed #f2e5d3;
+}
+.dashboard-page .order-row:first-child{ border-top:none; padding-top:4px; }
+.dashboard-page .oid{ font-weight:800; color:#111827; }
+.dashboard-page .oid:hover{ color:var(--primary); }
+.dashboard-page .pay{ color:#1f2937; font-weight:600; }
+.dashboard-page .amt{ text-align:right; font-weight:800; font-variant-numeric:tabular-nums; }
+.dashboard-page .orders-actions{ margin-top:12px; display:flex; gap:12px; flex-wrap:wrap; }
+
+/* ===== Buttons (scoped) ===== */
+.dashboard-page .dash-btn{
+  display:inline-flex; align-items:center; justify-content:center;
+  height:44px; padding:0 16px; border-radius:10px;
+  font-weight:700; letter-spacing:.04px; font-size:1rem;
+  border:1px solid var(--border); background:#fff; color:var(--ink);
+  transition:background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+}
+/* keep keyboard ring for neutral/outline buttons */
+.dashboard-page .dash-btn:focus-visible{ outline:none; box-shadow:0 0 0 3px var(--ring); }
+
+/* Outline */
+.dashboard-page .dash-btn--outline{
+  background:#fff; border-color:#e5e7eb; color:var(--ink);
+}
+.dashboard-page .dash-btn--outline:hover{
+  border-color:var(--primary);
+  box-shadow:0 0 0 2px var(--ring);
+}
+.dashboard-page .dash-btn--outline:active{
+  border-color:color-mix(in oklab, var(--primary), #000 18%);
+}
+
+/* Primary (orange) — no ring effect */
+.dashboard-page .dash-btn--primary{
+  background:var(--primary); border-color:var(--primary); color:#fff;
+}
+.dashboard-page .dash-btn--primary:hover{
+  background:color-mix(in oklab, var(--primary), #fff 16%);
+  border-color:color-mix(in oklab, var(--primary), #000 8%);
+  box-shadow:none;
+}
+.dashboard-page .dash-btn--primary:active{
+  background:color-mix(in oklab, var(--primary), #fff 26%);
+  border-color:color-mix(in oklab, var(--primary), #000 12%);
+  box-shadow:none;
+}
+.dashboard-page .dash-btn--primary:focus-visible{ outline:none; box-shadow:none; }
+
+.dashboard-page .dash-btn[disabled]{ opacity:.6; cursor:not-allowed; }
+/* Ensure the dropdown fits and isn't clipped in the profile card */
+.dashboard-page .prof-card{ overflow: visible; }
+.dashboard-page .prof-card .sk-select{ width: 100%; }
+.dashboard-page .prof-card .sk-select-trigger{ width: 100%; }
+/* Make the profile select’s arrow match the thin chevron style */
+.dashboard-page .prof-card .sk-select .chev{
+  display:inline-flex; align-items:center; margin-left:auto;
+  color: var(--primary);          /* uses your brand orange */
+}
+.dashboard-page .prof-card .sk-select .chev svg{
+  display:block; pointer-events:none; /* don’t intercept clicks */
+}
+
+/* --- Gender select: open only via arrow hover (scoped to profile card) --- */
+
+/* block the global hover-open coming from select.css unless .is-open */
+.dashboard-page .prof-card .sk-select:not(.is-open):hover .sk-select-menu{
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+/* let the arrow capture hover (select.css had pointer-events:none) */
+.dashboard-page .prof-card .sk-select .chev{
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-left: auto;
+  color: var(--primary);
+}
+.dashboard-page .prof-card .sk-select .chev svg{
+  display: block;
+}
