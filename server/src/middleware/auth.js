@@ -10,17 +10,25 @@ export function signSession(user){
 }
 
 export function setAuthCookie(res, token){
+  const isProd = process.env.NODE_ENV === 'production';
+
   res.cookie(config.jwt.cookieName, token, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: false,              // set true when served over HTTPS in production
+    // Cross-site cookies require SameSite=None and Secure=true
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
     path: '/'
   });
 }
 
 export function clearAuthCookie(res){
-  res.clearCookie(config.jwt.cookieName, { path: '/' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie(config.jwt.cookieName, {
+    path: '/',
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd
+  });
 }
 
 /** Strict guard — 401 if not authenticated */
