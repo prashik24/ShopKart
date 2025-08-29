@@ -1,3 +1,4 @@
+// server/src/index.js
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -10,8 +11,8 @@ import { maybeUser } from './middleware/auth.js';
 const app = express();
 
 /**
- * IMPORTANT for Render/any reverse proxy:
- * Makes Express treat the proxy as trusted so `secure` cookies are honored.
+ * IMPORTANT behind any reverse proxy (Render, Vercel, Netlify, Nginx):
+ * Needed so Express knows it's behind HTTPS and will honor `secure` cookies.
  */
 app.set('trust proxy', 1);
 
@@ -19,32 +20,55 @@ app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
 /**
- * CORS must allow the EXACT frontend origin and credentials.
- * Set CLIENT_ORIGIN in Render to your frontend URL, e.g.
- *   https://shopkart-fontent.onrender.com
+ * Robust CORS:
+ * - Use CLIENT_ORIGIN for your *primary* frontend (Render static site)
+ * - Optionally ALLOWED_ORIGINS lets you add multiple, comma-separated
+ *   (e.g., your local dev origin AND your deployed site)
  */
-app.use(cors({
-  origin: config.clientOrigin,
-  credentials: true
-}));
+const allowList = (process.env.ALLOWED_ORIGINS || config.clientOrigin || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
 
+app.use(
+  cors({
+    origin(origin, cb) {
+      // allow same-origin / curl / server-to-server
+      if (!origin) return cb(null, true);
+      if (allowList.includes(origin)) return cb(null, true);
+      return cb(new Error('CORS: origin not allowed: ' + origin), false);
+    },
+    credentials: true,
+  })
+);
+
+// Simple probe for health checks
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// Soft session probe — always 200, returns { user: null } when not logged in
+// SOFT session probe — never 401. Returns { user: null } when no session.
+// Your React app can call this on boot to hydrate session silently.
 app.get('/api/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
   return res.json({
-    user: { id: u._id, name: u.name, email: u.email, gender: u.gender, createdAt: u.createdAt }
+    user: {
+      id: u._id,
+      name: u.name,
+      email: u.email,
+      gender: u.gender,
+      createdAt: u.createdAt,
+    },
   });
 });
 
+// Business routes
 app.use('/api/auth', authRoutes);
 app.use('/api/me', meRoutes);
 
-// 404
+// 404 handler
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
+// Start
 await connectDb();
 app.listen(config.port, () => {
   console.log(`[server] listening on http://localhost:${config.port}`);
