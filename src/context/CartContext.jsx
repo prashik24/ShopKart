@@ -6,7 +6,6 @@ import { api } from '../api/client.js'
 const CartCtx = createContext(null)
 
 // --- helpers -------------------------------------------------------------
-
 function sameKey(a, b) {
   const A = a?.id ?? a?.productId
   const B = b?.id ?? b?.productId
@@ -17,7 +16,6 @@ function keyOf(x) {
 }
 
 // --- reducer -------------------------------------------------------------
-
 function reducer(state, action) {
   switch (action.type) {
     case 'INIT':
@@ -30,7 +28,7 @@ function reducer(state, action) {
         return [
           ...state,
           {
-            id: item.id ?? item.productId,         // store both for safety
+            id: item.id ?? item.productId,
             productId: item.productId ?? item.id,
             title: item.title,
             price: Number(item.price) || 0,
@@ -70,7 +68,6 @@ function reducer(state, action) {
 }
 
 // --- provider ------------------------------------------------------------
-
 export function CartProvider({ children }) {
   const { user, loading } = useAuth()
   const [cart, dispatch] = useReducer(reducer, [])
@@ -88,12 +85,16 @@ export function CartProvider({ children }) {
         dispatch({ type: 'INIT', payload: [] })
         return
       }
+
+      // 👇 Small settle delay so the session cookie from /login is available
+      await new Promise(r => setTimeout(r, 120))
+
       try {
         const res = await api.getCart()
         if (ignore) return
         const srv = Array.isArray(res?.cart) ? res.cart : []
         dispatch({ type: 'INIT', payload: srv })
-        hydratedRef.current = true // mark that next save should be skipped once
+        hydratedRef.current = true
       } catch {
         if (!ignore) {
           dispatch({ type: 'INIT', payload: [] })
@@ -110,7 +111,7 @@ export function CartProvider({ children }) {
   useEffect(() => {
     if (loading || !user) return
 
-    // Skip the very first save right after INIT/hydrate to avoid PUT ping
+    // Skip the very first save right after INIT/hydrate
     if (hydratedRef.current) {
       hydratedRef.current = false
       return
@@ -120,7 +121,7 @@ export function CartProvider({ children }) {
       api.putCart(cart).catch(() => {
         /* ignore transient errors */
       })
-    }, 300) // small debounce
+    }, 300)
 
     return () => clearTimeout(t)
   }, [cart, user?.id, loading])
