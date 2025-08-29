@@ -1,68 +1,157 @@
-import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
+// shopkart/src/context/CartContext.jsx
+import { createContext, useContext, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useAuth } from './AuthContext.jsx'
 import { api } from '../api/client.js'
 
 const CartCtx = createContext(null)
 
-function reducer(state, action){
-  switch(action.type){
-    case 'INIT': return action.payload || []
+// --- helpers -------------------------------------------------------------
+
+function sameKey(a, b) {
+  const A = a?.id ?? a?.productId
+  const B = b?.id ?? b?.productId
+  return String(A) === String(B)
+}
+function keyOf(x) {
+  return String(x?.id ?? x?.productId)
+}
+
+// --- reducer -------------------------------------------------------------
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'INIT':
+      return Array.isArray(action.payload) ? action.payload : []
+
     case 'ADD': {
       const item = action.payload
-      const ex = state.find(i => i.id === item.id)
-      return ex ? state.map(i => i.id===item.id ? {...i, qty:i.qty+1} : i)
-                : [...state, {...item, qty:1}]
+      const idx = state.findIndex(i => sameKey(i, item))
+      if (idx === -1) {
+        return [
+          ...state,
+          {
+            id: item.id ?? item.productId,         // store both for safety
+            productId: item.productId ?? item.id,
+            title: item.title,
+            price: Number(item.price) || 0,
+            image: item.image || '',
+            qty: Math.max(1, Number(item.qty) || 1),
+          },
+        ]
+      }
+      return state.map((i, n) =>
+        n === idx ? { ...i, qty: i.qty + Math.max(1, Number(item.qty) || 1) } : i
+      )
     }
-    case 'REMOVE': return state.filter(i => i.id !== action.payload)
-    case 'INC': return state.map(i => i.id===action.payload ? {...i, qty:i.qty+1} : i)
-    case 'DEC': return state.map(i => i.id===action.payload ? {...i, qty:Math.max(1,i.qty-1)} : i)
-    case 'CLEAR': return []
-    default: return state
+
+    case 'REMOVE': {
+      const id = String(action.payload)
+      return state.filter(i => keyOf(i) !== id)
+    }
+
+    case 'INC': {
+      const id = String(action.payload)
+      return state.map(i => (keyOf(i) === id ? { ...i, qty: i.qty + 1 } : i))
+    }
+
+    case 'DEC': {
+      const id = String(action.payload)
+      return state.map(i =>
+        keyOf(i) === id ? { ...i, qty: Math.max(1, i.qty - 1) } : i
+      )
+    }
+
+    case 'CLEAR':
+      return []
+
+    default:
+      return state
   }
 }
 
-export function CartProvider({children}){
-  const { user } = useAuth()
+// --- provider ------------------------------------------------------------
+
+export function CartProvider({ children }) {
+  const { user, loading } = useAuth()
   const [cart, dispatch] = useReducer(reducer, [])
 
-  // load cart when user logs in
-  useEffect(()=>{
-    (async ()=>{
-      if(!user){ dispatch({type:'INIT', payload: []}); return }
-      try{
-        const { cart } = await api.getCart()
-        dispatch({type:'INIT', payload: cart })
-      }catch{
-        dispatch({type:'INIT', payload: []})
+  // Track whether we just hydrated from server; skip first save after that
+  const hydratedRef = useRef(false)
+
+  // Load cart only after auth check is finished and user is present
+  useEffect(() => {
+    let ignore = false
+    ;(async () => {
+      if (loading) return
+      if (!user) {
+        hydratedRef.current = false
+        dispatch({ type: 'INIT', payload: [] })
+        return
+      }
+      try {
+        const res = await api.getCart()
+        if (ignore) return
+        const srv = Array.isArray(res?.cart) ? res.cart : []
+        dispatch({ type: 'INIT', payload: srv })
+        hydratedRef.current = true // mark that next save should be skipped once
+      } catch {
+        if (!ignore) {
+          dispatch({ type: 'INIT', payload: [] })
+          hydratedRef.current = true
+        }
       }
     })()
-  },[user?.id])
+    return () => {
+      ignore = true
+    }
+  }, [user?.id, loading])
 
-  // sync to server whenever cart changes (only if logged in)
-  useEffect(()=>{
-    if(!user) return
-    api.putCart(cart).catch(()=>{})
-  },[cart, user?.id])
+  // Debounced save to server whenever cart changes (and user exists)
+  useEffect(() => {
+    if (loading || !user) return
 
-  const totals = useMemo(()=>{
-    const count = cart.reduce((n,i)=>n+i.qty,0)
-    const amount = cart.reduce((n,i)=>n+i.price*i.qty,0)
-    return {count, amount}
-  },[cart])
+    // Skip the very first save right after INIT/hydrate to avoid PUT ping
+    if (hydratedRef.current) {
+      hydratedRef.current = false
+      return
+    }
 
-  const value = {
-    cart, totals,
-    add:(p)=>dispatch({type:'ADD', payload:{id:p.id, title:p.title, price:p.price, image:p.image}}),
-    remove:(id)=>dispatch({type:'REMOVE', payload:id}),
-    inc:(id)=>dispatch({type:'INC', payload:id}),
-    dec:(id)=>dispatch({type:'DEC', payload:id}),
-    clear:()=>dispatch({type:'CLEAR'})
-  }
+    const t = setTimeout(() => {
+      api.putCart(cart).catch(() => {
+        /* ignore transient errors */
+      })
+    }, 300) // small debounce
+
+    return () => clearTimeout(t)
+  }, [cart, user?.id, loading])
+
+  const totals = useMemo(() => {
+    const count = cart.reduce((n, i) => n + Number(i.qty || 0), 0)
+    const amount = cart.reduce(
+      (n, i) => n + Number(i.price || 0) * Number(i.qty || 0),
+      0
+    )
+    return { count, amount }
+  }, [cart])
+
+  const value = useMemo(
+    () => ({
+      cart,
+      totals,
+      add: p => dispatch({ type: 'ADD', payload: p }),
+      remove: id => dispatch({ type: 'REMOVE', payload: id }),
+      inc: id => dispatch({ type: 'INC', payload: id }),
+      dec: id => dispatch({ type: 'DEC', payload: id }),
+      clear: () => dispatch({ type: 'CLEAR' }),
+    }),
+    [cart, totals]
+  )
+
   return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>
 }
 
-export function useCart(){
+export function useCart() {
   const ctx = useContext(CartCtx)
-  if(!ctx) throw new Error('useCart must be used within CartProvider')
+  if (!ctx) throw new Error('useCart must be used within CartProvider')
   return ctx
 }
