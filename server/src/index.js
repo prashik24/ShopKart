@@ -1,4 +1,3 @@
-// server/src/index.js
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -10,21 +9,13 @@ import { maybeUser } from './middleware/auth.js';
 
 const app = express();
 
-/**
- * IMPORTANT behind any reverse proxy (Render, Vercel, Netlify, Nginx):
- * Needed so Express knows it's behind HTTPS and will honor `secure` cookies.
- */
+// Trust proxy for Render/Heroku/etc
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
 
-/**
- * Robust CORS:
- * - Use CLIENT_ORIGIN for your *primary* frontend (Render static site)
- * - Optionally ALLOWED_ORIGINS lets you add multiple, comma-separated
- *   (e.g., your local dev origin AND your deployed site)
- */
+// --- CORS ---
 const allowList = (process.env.ALLOWED_ORIGINS || config.clientOrigin || '')
   .split(',')
   .map(s => s.trim())
@@ -33,24 +24,22 @@ const allowList = (process.env.ALLOWED_ORIGINS || config.clientOrigin || '')
 app.use(
   cors({
     origin(origin, cb) {
-      // allow same-origin / curl / server-to-server
-      if (!origin) return cb(null, true);
+      if (!origin) return cb(null, true); // allow curl / Postman / same-origin
       if (allowList.includes(origin)) return cb(null, true);
-      return cb(new Error('CORS: origin not allowed: ' + origin), false);
+      return cb(null, false); // just deny, don’t throw
     },
     credentials: true,
   })
 );
 
-// Simple probe for health checks
+// Health check
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// SOFT session probe — never 401. Returns { user: null } when no session.
-// Your React app can call this on boot to hydrate session silently.
+// Session probe (never 401)
 app.get('/api/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
-  return res.json({
+  res.json({
     user: {
       id: u._id,
       name: u.name,
@@ -61,14 +50,14 @@ app.get('/api/session', maybeUser, (req, res) => {
   });
 });
 
-// Business routes
+// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/me', meRoutes);
 
-// 404 handler
+// 404 fallback
 app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
-// Start
+// Boot
 await connectDb();
 app.listen(config.port, () => {
   console.log(`[server] listening on http://localhost:${config.port}`);
