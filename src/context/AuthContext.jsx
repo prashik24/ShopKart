@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
     let alive = true;
     (async () => {
       try {
-        // If your API doesn't have /session, you can swap back to api.me() here.
         const res = await (api.session ? api.session() : api.me());
         if (alive && res?.user) setUser(res.user);
       } catch {
@@ -44,7 +43,6 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try { await api.logout(); } catch {}
-    // Clean this user's saved address so it doesn't appear for others
     try {
       const email = user?.email?.toLowerCase();
       if (email) localStorage.removeItem(`sk_addr:${email}`);
