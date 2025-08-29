@@ -9,16 +9,28 @@ import { maybeUser } from './middleware/auth.js';
 
 const app = express();
 
+/**
+ * IMPORTANT for Render/any reverse proxy:
+ * Makes Express treat the proxy as trusted so `secure` cookies are honored.
+ */
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+
+/**
+ * CORS must allow the EXACT frontend origin and credentials.
+ * Set CLIENT_ORIGIN in Render to your frontend URL, e.g.
+ *   https://shopkart-fontent.onrender.com
+ */
 app.use(cors({
-  origin: config.clientOrigin,     // e.g. http://localhost:5173
+  origin: config.clientOrigin,
   credentials: true
 }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// NEW: soft session probe – always 200, returns { user: null } if not logged in
+// Soft session probe — always 200, returns { user: null } when not logged in
 app.get('/api/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
