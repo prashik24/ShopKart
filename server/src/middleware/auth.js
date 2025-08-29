@@ -15,8 +15,8 @@ export function setAuthCookie(res, token){
   res.cookie(config.jwt.cookieName, token, {
     httpOnly: true,
     // Cross-site cookies require SameSite=None and Secure=true
-      sameSite: 'none',  // must be none for cross-site
-    secure: true, 
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd,
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
     path: '/'
   });
