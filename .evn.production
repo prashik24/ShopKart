@@ -1,1 +1,2 @@
-VITE_API_BASE=https://shopkart-backend-a55g.onrender.com
+// .env.production for the frontend (Render Static Site)
+VITE_API_BASE=https://shopkart-backend-a55g.onrender.com/api

@@ -1,3 +1,4 @@
+// server/src/middleware/auth.js
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
 import { User } from '../models/User.js';
@@ -10,23 +11,22 @@ export function signSession(user){
 }
 
 export function setAuthCookie(res, token){
-  // Use secure cross-site cookies in production (Render uses HTTPS)
-  const isProd = process.env.NODE_ENV === 'production';
+  // Cross-site between frontend.onrender.com <-> backend.onrender.com
+  // requires SameSite=None and Secure=true
   res.cookie(config.jwt.cookieName, token, {
     httpOnly: true,
-    sameSite: isProd ? 'none' : 'lax',
-    secure: isProd, // must be true for SameSite=None
+    sameSite: 'none',        // <-- important for cross-site
+    secure: true,            // <-- required on HTTPS (Render uses HTTPS)
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
     path: '/'
   });
 }
 
 export function clearAuthCookie(res){
-  const isProd = process.env.NODE_ENV === 'production';
   res.clearCookie(config.jwt.cookieName, {
     path: '/',
-    sameSite: isProd ? 'none' : 'lax',
-    secure: isProd
+    sameSite: 'none',
+    secure: true,
   });
 }
 
@@ -42,7 +42,7 @@ export async function requireUser(req, res, next){
 
     req.user = user;
     next();
-  }catch(_err){
+  }catch(err){
     return res.status(401).json({ error: 'Unauthorized' });
   }
 }

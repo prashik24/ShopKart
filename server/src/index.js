@@ -10,27 +10,31 @@ import { maybeUser } from './middleware/auth.js';
 
 const app = express();
 
+// Render sits behind a proxy (Cloudflare). This helps with secure cookies.
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+
+// Support one or more allowed origins (comma-separated)
+const allowed = (config.clientOrigin || '')
+  .split(',')
+  .map(s => s.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: config.clientOrigin, // e.g. https://shopkart-frontend.onrender.com
+  origin: function(origin, cb){
+    // allow no-origin (curl/health) or any in the allowlist
+    if (!origin || allowed.includes(origin)) return cb(null, true);
+    return cb(new Error('CORS: Origin not allowed'), false);
+  },
   credentials: true
 }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// Soft session probe (recommended endpoint for the client)
+// Soft session
 app.get('/api/session', maybeUser, (req, res) => {
-  if (!req.user) return res.json({ user: null });
-  const u = req.user;
-  res.json({
-    user: { id: u._id, name: u.name, email: u.email, gender: u.gender, createdAt: u.createdAt }
-  });
-});
-
-// OPTIONAL mirror so requests without the /api prefix (e.g. /session) still work.
-// This is only needed if your frontend was already deployed with a wrong base.
-app.get('/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
   res.json({
