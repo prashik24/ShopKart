@@ -73,7 +73,7 @@ function buildOtpEmail({ name, email, otp }) {
                 <div style="text-align:center;margin:12px 0 6px;">
                   <div style="
                     display:inline-block;
-                    background:#111827;
+                    background:#F59E0B;
                     color:#ffffff;
                     font:700 28px/1 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
                     letter-spacing:6px;
@@ -98,7 +98,7 @@ function buildOtpEmail({ name, email, otp }) {
           </table>
 
           <div style="max-width:640px;padding:14px 10px 0 10px;font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#9CA3AF;">
-            © ${new Date().getFullYear()} Shop<span style="font-weight:700;color:#111827;">Kart</span>. All rights reserved.
+            © ${new Date().getFullYear()}<span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span>.
           </div>
         </td>
       </tr>
