@@ -1,4 +1,3 @@
-// server/src/routes/auth.js
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
@@ -9,23 +8,19 @@ import { signSession, setAuthCookie, clearAuthCookie } from '../middleware/auth.
 
 const router = Router();
 
-/** Small helper to shape user sent to client */
+/** Shape user for client */
 function toClientUser(u) {
   return {
     id: u._id,
     name: u.name,
     email: u.email,
     gender: u.gender,
-    createdAt: u.createdAt
+    createdAt: u.createdAt,
   };
 }
 
 /**
  * POST /api/auth/signup/initiate
- * body: { name, email, password }
- * - If user exists -> 409
- * - Create/overwrite OTP token, email OTP
- * - IMPORTANT: returns { email } so the client can navigate to /verify-otp
  */
 router.post('/signup/initiate', async (req, res) => {
   try {
@@ -44,56 +39,62 @@ router.post('/signup/initiate', async (req, res) => {
     const exists = await User.findOne({ email }).lean();
     if (exists) return res.status(409).json({ error: 'Already registered' });
 
-    // Remove any previous pending tokens for this email
     await SignupToken.deleteMany({ email });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const otp = generateOtp(); // 6-digit code
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await SignupToken.create({ email, name, passwordHash, otp, expiresAt });
 
-    // Styled email (no external images)
-    const html = `
-      <div style="font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;padding:24px">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb">
-          <tr>
-            <td style="padding:18px 22px;border-bottom:1px solid #e5e7eb">
-              <div style="font-size:20px;font-weight:800;letter-spacing:.4px;color:#111827">
-                <span style="color:#111827">Shop</span><span style="color:#ef4444">Kart</span>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:22px">
-              <h1 style="margin:0 0 10px;font-size:20px;color:#111827">Verify your email</h1>
-              <p style="margin:0 0 14px;color:#374151">Hi ${name}, use this one-time code to finish creating your ShopKart account:</p>
-              <div style="text-align:center;margin:18px 0 10px">
-                <div style="display:inline-block;background:#111827;color:#fff;font-weight:700;font-size:26px;letter-spacing:4px;border-radius:12px;padding:12px 18px">
-                  ${otp}
-                </div>
-              </div>
-              <p style="margin:10px 0 0;color:#6b7280;font-size:14px">This code expires in 10 minutes. If you didn’t request this, you can safely ignore this email.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:14px 22px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px">
-              © ${new Date().getFullYear()} ShopKart
-            </td>
-          </tr>
-        </table>
-      </div>`;
+    // ---------- Styled OTP Email (like order confirmation) ----------
+    const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Verify your email</title>
+</head>
+<body style="background:#f6f7fb;margin:0;padding:20px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <table role="presentation" cellspacing="0" cellpadding="0" width="100%" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08)">
+    <tr>
+      <td style="background:#111827;color:#fff;padding:16px 22px;font-size:20px;font-weight:700">
+        Shop<span style="color:#ef4444">Kart</span>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:24px">
+        <h1 style="margin:0 0 12px;font-size:20px;color:#111827">Verify your email</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#374151">
+          Hi ${name}, use this one-time code to finish creating your ShopKart account:
+        </p>
+        <div style="text-align:center;margin:20px 0">
+          <div style="display:inline-block;background:#111827;color:#ffffff;font-size:28px;font-weight:800;letter-spacing:6px;padding:14px 20px;border-radius:12px">
+            ${otp}
+          </div>
+        </div>
+        <p style="margin:12px 0 0;font-size:14px;color:#6b7280">
+          This code expires in 10 minutes. If you didn’t request this, you can safely ignore this email.
+        </p>
+      </td>
+    </tr>
+    <tr>
+      <td style="background:#f9fafb;padding:14px 22px;font-size:12px;color:#9ca3af;text-align:center">
+        © ${new Date().getFullYear()} ShopKart. All rights reserved.
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
-    const text = `Your ShopKart sign-up code is: ${otp} (valid 10 minutes)`;
+    const text = `Your ShopKart sign-up code is: ${otp} (valid for 10 minutes).`;
 
     await sendEmail({
       to: email,
       subject: 'Your ShopKart verification code',
       html,
-      text
+      text,
     });
 
-    // 👇 return the email so the frontend can route to /verify-otp?email=...
     return res.json({ ok: true, email });
   } catch (err) {
     console.error('[signup/initiate] error:', err);
@@ -103,15 +104,11 @@ router.post('/signup/initiate', async (req, res) => {
 
 /**
  * POST /api/auth/signup/verify
- * body: { email, otp }
- * - If token valid -> create user, log in (set cookie), delete token
  */
 router.post('/signup/verify', async (req, res) => {
   try {
-    const emailRaw = String(req.body?.email || '');
-    const otpRaw = String(req.body?.otp || '');
-    const email = emailRaw.trim().toLowerCase();
-    const otp = otpRaw.trim();
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const otp = String(req.body?.otp || '').trim();
 
     if (!email || !otp) return res.status(400).json({ error: 'Missing fields' });
 
@@ -124,20 +121,17 @@ router.post('/signup/verify', async (req, res) => {
       return res.status(400).json({ error: 'OTP expired' });
     }
 
-    // Create user
     const created = await User.create({
       name: pending.name,
       email,
       passwordHash: pending.passwordHash,
       gender: 'Prefer not to say',
       cart: [],
-      orders: []
+      orders: [],
     });
 
-    // Cleanup token
     await SignupToken.deleteMany({ email });
 
-    // Start session
     const token = signSession(created);
     setAuthCookie(res, token);
 
@@ -150,8 +144,6 @@ router.post('/signup/verify', async (req, res) => {
 
 /**
  * POST /api/auth/login
- * body: { email, password }
- * - Validate & set cookie
  */
 router.post('/login', async (req, res) => {
   try {
