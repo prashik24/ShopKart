@@ -1,22 +1,43 @@
 // shopkart/src/api/client.js
 
-// Dynamically choose backend API base
-const BASE =
-  import.meta.env.VITE_API_BASE ||
-  (import.meta.env.MODE === "production"
-    ? "https://shopkart-backend-a55g.onrender.com/api" // ← updated backend
-    : "http://localhost:4000/api");
+/**
+ * Normalizes the API base so it ALWAYS ends with `/api`
+ * and has no trailing slash before that.
+ */
+function normalizeBase(input) {
+  // Default when env var is missing
+  let base =
+    input ||
+    (import.meta.env.MODE === "production"
+      ? "https://shopkart-backend-a55g.onrender.com/api"
+      : "http://localhost:4000/api");
+
+  // Trim trailing slashes
+  base = base.replace(/\/+$/, "");
+
+  // Ensure it ends with /api
+  if (!/\/api$/i.test(base)) base += "/api";
+
+  return base;
+}
+
+// Prefer VITE_API_BASE if present; normalize either way
+const BASE = normalizeBase(import.meta.env.VITE_API_BASE);
 
 async function req(path, { method = "GET", body } = {}) {
   const res = await fetch(`${BASE}${path}`, {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: "include", // needed for auth cookies
+    credentials: "include", // send/receive auth cookies
   });
 
   let data = {};
-  try { data = await res.json(); } catch {/* ignore empty body */}
+  try {
+    data = await res.json();
+  } catch {
+    // allow empty body
+  }
 
   if (!res.ok) {
     const err = data?.error || `Request failed (${res.status})`;

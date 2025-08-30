@@ -1,3 +1,4 @@
+// server/src/index.js
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
@@ -9,25 +10,30 @@ import { maybeUser } from './middleware/auth.js';
 
 const app = express();
 
-/** Trust Render/Proxy so secure cookies work */
-app.set('trust proxy', 1);
-
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
-
-/** CORS: allow ONLY your frontend; send cookies */
 app.use(cors({
-  origin: config.clientOrigin,      // e.g. https://your-frontend.onrender.com
+  origin: config.clientOrigin, // e.g. https://shopkart-frontend.onrender.com
   credentials: true
 }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-/** Soft session probe — always 200, returns { user: null } when logged out */
+// Soft session probe (recommended endpoint for the client)
 app.get('/api/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
-  return res.json({
+  res.json({
+    user: { id: u._id, name: u.name, email: u.email, gender: u.gender, createdAt: u.createdAt }
+  });
+});
+
+// OPTIONAL mirror so requests without the /api prefix (e.g. /session) still work.
+// This is only needed if your frontend was already deployed with a wrong base.
+app.get('/session', maybeUser, (req, res) => {
+  if (!req.user) return res.json({ user: null });
+  const u = req.user;
+  res.json({
     user: { id: u._id, name: u.name, email: u.email, gender: u.gender, createdAt: u.createdAt }
   });
 });
@@ -35,8 +41,8 @@ app.get('/api/session', maybeUser, (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/me', meRoutes);
 
-/** 404 */
-app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
+// 404
+app.use((req, res) => res.status(404).json({ error: 'Not found' }));
 
 await connectDb();
 app.listen(config.port, () => {
