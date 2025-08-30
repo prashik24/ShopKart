@@ -1,3 +1,4 @@
+// shopkart/src/pages/Login.jsx
 import { useEffect, useState } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
@@ -7,27 +8,32 @@ import "../styles/auth.css";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-// Map backend error messages to friendlier, specific copy
+/**
+ * Convert backend error text into specific, friendly messages:
+ * - Unregistered email  -> "This email is not registered."
+ * - Wrong password      -> "Password is incorrect."
+ * - Both wrong / generic-> "Invalid email or password."
+ */
 function toFriendlyLoginError(raw = "") {
   const msg = String(raw || "").trim();
 
-  // Common “user missing” phrasings
-  if (/(no such user|user not found|account not found|unknown user)/i.test(msg)) {
+  // Email not found (backend should return one of these)
+  if (/(no such user|user not found|account not found|unknown user|email not registered|user does not exist)/i.test(msg)) {
     return "This email is not registered.";
   }
 
-  // Common “password wrong” phrasings
-  if (/(invalid password|wrong password)/i.test(msg)) {
+  // Wrong password (email exists)
+  if (/(invalid password|wrong password|password mismatch)/i.test(msg)) {
     return "Password is incorrect.";
   }
 
-  // Many APIs lump both cases into “Invalid credentials”
-  if (/invalid credentials/i.test(msg)) {
-    return "Password is incorrect.";
+  // Generic catch-all many APIs use
+  if (/invalid credentials|unauthorized|forbidden/i.test(msg)) {
+    return "Invalid email or password.";
   }
 
-  // Fallback to what we received, or a generic message
-  return msg || "Unable to sign in";
+  // Fallback
+  return msg || "Invalid email or password.";
 }
 
 export default function Login() {
@@ -37,7 +43,7 @@ export default function Login() {
 
   const intent = params.get("intent") || "";   // e.g. "add"
   const pid    = params.get("pid")    || "";   // product id to add
-  const next   = params.get("next")   || "/";  // DEFAULT → HOME
+  const next   = params.get("next")   || "/";  // where to go after login
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
@@ -47,14 +53,13 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user && !intent) {
-      navigate("/", { replace: true });
-    }
+    if (user && !intent) navigate("/", { replace: true });
   }, [user, intent, navigate]);
 
   const submit = async (e) => {
     e.preventDefault();
 
+    // Client-side form checks first
     const problems = [];
     if (!email) problems.push("email is missing");
     else if (!emailOk(email)) problems.push("email is invalid");
@@ -70,6 +75,7 @@ export default function Login() {
     try {
       await login({ email, password });
 
+      // Optional intent: add product to cart after login
       if (intent === "add" && pid) {
         const product = products.find((p) => String(p.id) === String(pid));
         if (product) add(product);
@@ -79,7 +85,6 @@ export default function Login() {
 
       navigate(next, { replace: true });
     } catch (err) {
-      // Show specific, user-friendly message
       setError(toFriendlyLoginError(err?.message));
     }
   };
