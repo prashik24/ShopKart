@@ -4,12 +4,6 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { api } from "../api/client.js";
 import "../styles/auth.css";
 
-/**
- * Styled 6-box OTP with:
- * - auto-advance / backspace navigation
- * - paste support
- * - countdown + Resend
- */
 const BOXES = 6;
 
 export default function OtpVerify() {
@@ -17,13 +11,6 @@ export default function OtpVerify() {
   const navigate = useNavigate();
   const { verifySignupOtp } = useAuth();
 
-  // email from URL or session (session survives refresh)
-  const initialEmail =
-    params.get("email") ||
-    sessionStorage.getItem("sk_pending_email") ||
-    "";
-
-  const [email, setEmail] = useState(initialEmail);
   const [digits, setDigits] = useState(Array(BOXES).fill(""));
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -32,11 +19,17 @@ export default function OtpVerify() {
 
   const inputsRef = useRef([]);
 
+  // Load payload from sessionStorage
+  let pendingPayload = null;
+  try {
+    pendingPayload = JSON.parse(sessionStorage.getItem("sk_pending_payload") || "null");
+  } catch {}
+  const email = params.get("email") || pendingPayload?.email || "";
+
   useEffect(() => {
     inputsRef.current?.[0]?.focus();
   }, []);
 
-  // countdown for resend
   useEffect(() => {
     const t = setInterval(() => setSecs((s) => (s > 0 ? s - 1 : 0)), 1000);
     return () => clearInterval(t);
@@ -52,35 +45,16 @@ export default function OtpVerify() {
     if (v && idx < BOXES - 1) inputsRef.current[idx + 1]?.focus();
   };
 
-  const onKeyDown = (idx, e) => {
-    if (e.key === "Backspace" && !digits[idx] && idx > 0) {
-      inputsRef.current[idx - 1]?.focus();
-    }
-    if (e.key === "ArrowLeft" && idx > 0) inputsRef.current[idx - 1]?.focus();
-    if (e.key === "ArrowRight" && idx < BOXES - 1) inputsRef.current[idx + 1]?.focus();
-  };
-
-  const onPaste = (e) => {
-    const text = e.clipboardData.getData("text").replace(/\D/g, "");
-    if (!text) return;
-    e.preventDefault();
-    const next = Array(BOXES).fill("");
-    for (let i = 0; i < Math.min(BOXES, text.length); i++) next[i] = text[i];
-    setDigits(next);
-    const last = Math.min(text.length, BOXES) - 1;
-    inputsRef.current[last >= 0 ? last : 0]?.focus();
-  };
-
   const submit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!/^\S+@\S+\.\S+$/.test(email)) {
-      setError("Email missing or invalid. Go back and try again.");
+    if (!email) {
+      setError("Missing email. Go back and try again.");
       return;
     }
     if (otp.length !== BOXES) {
-      setError("Enter the 6‑digit code.");
+      setError("Enter the 6-digit code.");
       return;
     }
 
@@ -99,49 +73,14 @@ export default function OtpVerify() {
     setError("");
     setResending(true);
     try {
-      await api.signupInitiate({ name: "", email, password: "" });
+      if (!pendingPayload) throw new Error("Missing signup details. Please restart signup.");
+      await api.signupInitiate(pendingPayload);
       setSecs(30);
     } catch (e) {
       setError(e?.message || "Could not resend code");
     } finally {
       setResending(false);
     }
-  };
-
-  // Inline styles to keep this self-contained
-  const style = {
-    boxes: {
-      display: "grid",
-      gridAutoFlow: "column",
-      gap: 10,
-      justifyContent: "center",
-      margin: "12px 0 14px",
-    },
-    box: {
-      width: 46,
-      height: 56,
-      borderRadius: 12,
-      border: "1px solid var(--border, #e5e7eb)",
-      textAlign: "center",
-      fontSize: "1.25rem",
-      outline: "none",
-    },
-    actions: {
-      display: "flex",
-      gap: 8,
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: 12,
-    },
-    linkbtn: {
-      background: "none",
-      border: 0,
-      color: "var(--primary, #f59e0b)",
-      fontWeight: 600,
-      cursor: "pointer",
-      padding: 0,
-    },
-    linkbtnDisabled: { opacity: 0.55, cursor: "default" },
   };
 
   return (
@@ -153,29 +92,22 @@ export default function OtpVerify() {
       <form className="auth-card" onSubmit={submit} noValidate>
         <h2>Verify your email</h2>
         <div className="auth-note">
-          We sent a 6‑digit code to <b>{email || "your email"}</b>.
+          We sent a 6-digit code to <b>{email || "your email"}</b>.
         </div>
-        {error && (
-          <div className="auth-note err" aria-live="polite">
-            {error}
-          </div>
-        )}
+        {error && <div className="auth-note err">{error}</div>}
 
         <div className="field">
           <label>Enter OTP</label>
-
-          <div style={style.boxes} onPaste={onPaste}>
+          <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
             {digits.map((d, i) => (
               <input
                 key={i}
                 ref={(el) => (inputsRef.current[i] = el)}
                 inputMode="numeric"
-                autoComplete="one-time-code"
-                style={style.box}
                 value={d}
-                onChange={(e) => onChangeBox(i, e.target.value)}
-                onKeyDown={(e) => onKeyDown(i, e)}
                 maxLength={1}
+                onChange={(e) => onChangeBox(i, e.target.value)}
+                style={{ width: 40, textAlign: "center", fontSize: "1.5rem" }}
               />
             ))}
           </div>
@@ -185,16 +117,16 @@ export default function OtpVerify() {
           {submitting ? "Verifying…" : "Verify & Continue"}
         </button>
 
-        <div style={style.actions}>
+        <div style={{ marginTop: 12, textAlign: "center" }}>
           <button
             type="button"
-            style={{ ...style.linkbtn, ...(secs > 0 || resending ? style.linkbtnDisabled : {}) }}
+            className="link"
             disabled={secs > 0 || resending}
             onClick={resend}
           >
             {resending ? "Sending…" : secs > 0 ? `Resend in ${secs}s` : "Resend code"}
           </button>
-          <span className="muted">·</span>
+          <span className="muted"> · </span>
           <Link className="link" to="/signup">Wrong email?</Link>
         </div>
       </form>
