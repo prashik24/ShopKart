@@ -39,17 +39,27 @@ export default function Signup() {
     setError("");
     setSending(true);
 
-    // Save email so OTP page can read it even on refresh
-    sessionStorage.setItem("sk_pending_email", form.email.trim());
+    try {
+      const { email } = await signupInitiate({
+        name: nameTrim,
+        email: form.email.trim(),
+        password: form.password,
+      });
 
-    // ⬇️ Navigate to OTP **immediately** (no waiting)
-    navigate(`/verify-otp?email=${encodeURIComponent(form.email.trim())}`, { replace: true });
+      // Save email so OTP page can use it even on refresh
+      sessionStorage.setItem("sk_pending_email", email);
 
-    // Fire the initiate request in the background (don't block UI)
-    // If it fails, user can use "Resend" on OTP page.
-    signupInitiate({ name: nameTrim, email: form.email.trim(), password: form.password })
-      .catch(() => {})
-      .finally(() => setSending(false));
+      // ✅ Only redirect if backend says signup started
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}`, { replace: true });
+    } catch (err) {
+      if (err.message.includes("Already registered")) {
+        setError("This email is already registered. Please login instead.");
+      } else {
+        setError(err.message || "Unable to start sign up");
+      }
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
