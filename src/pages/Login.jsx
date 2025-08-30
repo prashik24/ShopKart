@@ -7,29 +7,6 @@ import "../styles/auth.css";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
-// Map backend error messages to friendlier, specific copy
-function toFriendlyLoginError(raw = "") {
-  const msg = String(raw || "").trim();
-
-  // Common “user missing” phrasings
-  if (/(no such user|user not found|account not found|unknown user)/i.test(msg)) {
-    return "This email is not registered.";
-  }
-
-  // Common “password wrong” phrasings
-  if (/(invalid password|wrong password)/i.test(msg)) {
-    return "Password is incorrect.";
-  }
-
-  // Many APIs lump both cases into “Invalid credentials”
-  if (/invalid credentials/i.test(msg)) {
-    return "Password is incorrect.";
-  }
-
-  // Fallback to what we received, or a generic message
-  return msg || "Unable to sign in";
-}
-
 export default function Login() {
   const { user, login } = useAuth();
   const { add } = useCart();
@@ -79,8 +56,7 @@ export default function Login() {
 
       navigate(next, { replace: true });
     } catch (err) {
-      // Show specific, user-friendly message
-      setError(toFriendlyLoginError(err?.message));
+      setError(err.message || "Unable to sign in");
     }
   };
 
