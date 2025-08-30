@@ -1,107 +1,68 @@
-// shopkart/src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client.js";
 
 const AuthCtx = createContext(null);
 
-// tiny helper to ensure the browser has time to persist cookies
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // ---- Boot: try to restore session quietly (never throws 401) ----
+  // Try to restore session quietly (avoid 401 noise)
   useEffect(() => {
     let alive = true;
     (async () => {
       try {
+        // If your API doesn't have /session, you can swap back to api.me() here.
         const res = await (api.session ? api.session() : api.me());
         if (alive && res?.user) setUser(res.user);
+      } catch {
+        // ignore
       } finally {
         if (alive) setLoading(false);
       }
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
-  // ---- Sign up (step 1) -> send OTP; DO NOT log in yet ----
   const signupInitiate = async ({ name, email, password }) => {
     await api.signupInitiate({ name, email, password });
     return { email };
   };
 
-  // ---- Verify OTP (step 2) -> server sets cookie + returns user ----
   const verifySignupOtp = async ({ email, otp }) => {
     const res = await api.signupVerify({ email, otp }); // { user }
-    // make sure cookie is persisted before app starts hitting /me/*
-    await wait(120);
-    // hydrate from soft session to be 100% sure
-    try {
-      const s = await (api.session ? api.session() : api.me());
-      if (s?.user) setUser(s.user);
-      else setUser(res.user);
-    } catch {
-      setUser(res.user);
-    }
+    setUser(res.user);
     return res.user;
   };
 
-  // ---- Login existing user ----
   const login = async ({ email, password }) => {
-    // server will set the auth cookie here
     const res = await api.login({ email, password }); // { user }
-    // give the browser a tick to persist cookies, then confirm with /session
-    await wait(120);
-    try {
-      const s = await (api.session ? api.session() : api.me());
-      if (s?.user) setUser(s.user);
-      else setUser(res.user);
-    } catch {
-      setUser(res.user);
-    }
+    setUser(res.user);
     return res.user;
   };
 
-  // ---- Logout (clear cookie session on server + local cleanup) ----
   const logout = async () => {
-    const email = user?.email?.toLowerCase();
+    try { await api.logout(); } catch {}
+    // Clean this user's saved address so it doesn't appear for others
     try {
-      await api.logout();
-    } catch {
-      // ignore network hiccups, we'll still drop local state
-    }
-
-    // remove per-user saved address so it doesn't appear for the next login
-    try {
+      const email = user?.email?.toLowerCase();
       if (email) localStorage.removeItem(`sk_addr:${email}`);
     } catch {}
-
     setUser(null);
   };
 
-  // ---- Update profile (Dashboard) ----
   const update = async (patch) => {
     const res = await api.updateProfile(patch); // { user }
     setUser(res.user);
     return res.user;
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      signupInitiate,
-      verifySignupOtp,
-      login,
-      logout,
-      update,
-    }),
-    [user, loading]
-  );
+  const value = useMemo(() => ({
+    user, loading,
+    signupInitiate, verifySignupOtp,
+    login, logout, update,
+  }), [user, loading]);
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
@@ -112,10 +73,6 @@ export function useAuth() {
   return ctx;
 }
 
-/**
- * Redirect away from auth pages if already logged in.
- * Usage: useRedirectIfAuthed("/") or useRedirectIfAuthed("/dashboard")
- */
 export function useRedirectIfAuthed(path = "/dashboard") {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
