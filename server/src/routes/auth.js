@@ -104,9 +104,9 @@ function buildOtpEmail({ name, email, otp }) {
               <td style="padding:14px 24px 18px 24px; text-align:center; border-top:1px solid #F3F4F6;">
                 <div style="font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#6B7280;">
                   © ${new Date().getFullYear()}
-                  <span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span> — All rights reserved.
+                  <span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span> All rights reserved.
                   <br/>
-                  Thanks for being part of ShopKart ❤️
+           
                 </div>
               </td>
             </tr>
