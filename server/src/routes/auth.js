@@ -16,19 +16,22 @@ function toClientUser(u) {
     name: u.name,
     email: u.email,
     gender: u.gender,
-    createdAt: u.createdAt
+    createdAt: u.createdAt,
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* -----------------  OTP EMAIL (brand-styled, no images) ----------- */
+/* --------------- OTP EMAIL (brand-styled, no images) --------------- */
 /* ------------------------------------------------------------------ */
 
 function buildOtpEmail({ name, email, otp }) {
   const safe = (s = '') =>
     String(s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
 
   // Render OTP as spaced digits for readability
   const prettyOtp = safe(otp).split('').join(' ');
@@ -89,20 +92,25 @@ function buildOtpEmail({ name, email, otp }) {
             </tr>
 
             <tr>
-              <td style="padding:18px 24px 22px 24px;">
+              <td style="padding:18px 24px;">
                 <div style="font:400 12px/1.7 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#6B7280;">
                   If you didn’t request this, you can safely ignore this email.
                 </div>
               </td>
             </tr>
-          </table>
 
-          <!-- Footer: brand-colored and corrected copy -->
-          <div style="max-width:640px;padding:14px 10px 0 10px;font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#9CA3AF;">
-            © 2025
-            <span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span>.
-            All rights reserved.
-          </div>
+            <!-- Footer moved INSIDE the card so Gmail won't collapse it -->
+            <tr>
+              <td style="padding:14px 24px 18px 24px; text-align:center; border-top:1px solid #F3F4F6;">
+                <div style="font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#6B7280;">
+                  © ${new Date().getFullYear()}
+                  <span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span> — All rights reserved.
+                  <br/>
+                  Thanks for being part of ShopKart ❤️
+                </div>
+              </td>
+            </tr>
+          </table>
         </td>
       </tr>
     </table>
@@ -111,7 +119,7 @@ function buildOtpEmail({ name, email, otp }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* ---------------------------  ROUTES  ----------------------------- */
+/* ----------------------------- ROUTES ------------------------------ */
 /* ------------------------------------------------------------------ */
 
 /**
@@ -153,7 +161,7 @@ router.post('/signup/initiate', async (req, res) => {
       to: email,
       subject: 'Your ShopKart verification code',
       html: buildOtpEmail({ name, email, otp }),
-      text: `Your ShopKart verification code is ${otp}. It expires in 10 minutes.`
+      text: `Your ShopKart verification code is ${otp}. It expires in 10 minutes.`,
     });
 
     // Let the client route to /verify-otp right away
@@ -194,7 +202,7 @@ router.post('/signup/verify', async (req, res) => {
       passwordHash: pending.passwordHash,
       gender: 'Prefer not to say',
       cart: [],
-      orders: []
+      orders: [],
     });
 
     // Cleanup token
