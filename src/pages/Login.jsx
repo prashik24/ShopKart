@@ -9,31 +9,16 @@ import "../styles/auth.css";
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
 /**
- * Convert backend error text into specific, friendly messages:
- * - Unregistered email  -> "This email is not registered."
- * - Wrong password      -> "Password is incorrect."
- * - Both wrong / generic-> "Invalid email or password."
+ * Only two cases:
+ * 1) Password wrong  -> "Password is incorrect."
+ * 2) Everything else -> "Invalid email or password."
  */
 function toFriendlyLoginError(raw = "") {
   const msg = String(raw || "").trim();
-
-  // Email not found (backend should return one of these)
-  if (/(no such user|user not found|account not found|unknown user|email not registered|user does not exist)/i.test(msg)) {
-    return "This email is not registered.";
-  }
-
-  // Wrong password (email exists)
   if (/(invalid password|wrong password|password mismatch)/i.test(msg)) {
     return "Password is incorrect.";
   }
-
-  // Generic catch-all many APIs use
-  if (/invalid credentials|unauthorized|forbidden/i.test(msg)) {
-    return "Invalid email or password.";
-  }
-
-  // Fallback
-  return msg || "Invalid email or password.";
+  return "This email is not registered.";
 }
 
 export default function Login() {
@@ -49,6 +34,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [error, setError]       = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
@@ -59,7 +45,7 @@ export default function Login() {
   const submit = async (e) => {
     e.preventDefault();
 
-    // Client-side form checks first
+    // Basic client-side checks
     const problems = [];
     if (!email) problems.push("email is missing");
     else if (!emailOk(email)) problems.push("email is invalid");
@@ -72,6 +58,7 @@ export default function Login() {
     }
 
     setError("");
+    setSubmitting(true);
     try {
       await login({ email, password });
 
@@ -86,6 +73,8 @@ export default function Login() {
       navigate(next, { replace: true });
     } catch (err) {
       setError(toFriendlyLoginError(err?.message));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -150,8 +139,8 @@ export default function Login() {
           )}
         </div>
 
-        <button className="btn btn-solid block" type="submit">
-          Login
+        <button className="btn btn-solid block" type="submit" disabled={submitting}>
+          {submitting ? "Signing in…" : "Login"}
         </button>
 
         <div className="auth-divider">New to ShopKart?</div>
