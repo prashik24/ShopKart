@@ -4,7 +4,7 @@
 const BASE =
   import.meta.env.VITE_API_BASE ||
   (import.meta.env.MODE === "production"
-    ? "https://shopkart-backend-o34d.onrender.com/api"
+    ? "https://shopkart-backend-a55g.onrender.com/api" // ← updated backend
     : "http://localhost:4000/api");
 
 async function req(path, { method = "GET", body } = {}) {
@@ -12,15 +12,11 @@ async function req(path, { method = "GET", body } = {}) {
     method,
     headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
-    credentials: "include", // ✅ needed for auth cookies
+    credentials: "include", // needed for auth cookies
   });
 
   let data = {};
-  try {
-    data = await res.json();
-  } catch {
-    // ignore empty body
-  }
+  try { data = await res.json(); } catch {/* ignore empty body */}
 
   if (!res.ok) {
     const err = data?.error || `Request failed (${res.status})`;
@@ -32,7 +28,7 @@ async function req(path, { method = "GET", body } = {}) {
 export const api = {
   // --- sessions ---
   session: () => req("/session"), // soft (never 401s)
-  me: () => req("/me"), // strict (401 if not logged in)
+  me: () => req("/me"),           // strict (401 if not logged in)
 
   // --- auth ---
   login: ({ email, password }) =>
@@ -64,7 +60,7 @@ export const api = {
   postOrder: (order) =>
     req("/me/orders", { method: "POST", body: { order } }),
 
-  // backwards compatibility for Payment.jsx expecting { orderId }
+  // Back-compat for code that expects { orderId }
   async createOrder(order) {
     const data = await req("/me/orders", { method: "POST", body: { order } });
     return { orderId: data?.order?.id || data?.id };
