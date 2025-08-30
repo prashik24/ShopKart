@@ -30,6 +30,8 @@ function buildOtpEmail({ name, email, otp }) {
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
+  const year = new Date().getFullYear();
+
   // Render OTP as spaced digits for readability
   const prettyOtp = safe(otp).split('').join(' ');
 
@@ -73,7 +75,7 @@ function buildOtpEmail({ name, email, otp }) {
                 <div style="text-align:center;margin:12px 0 6px;">
                   <div style="
                     display:inline-block;
-                    background:#111827;
+                    background:#F59E0B;
                     color:#ffffff;
                     font:700 28px/1 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
                     letter-spacing:6px;
@@ -97,8 +99,11 @@ function buildOtpEmail({ name, email, otp }) {
             </tr>
           </table>
 
+          <!-- Footer — color + brand treatment matches the rest of emails -->
           <div style="max-width:640px;padding:14px 10px 0 10px;font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#9CA3AF;">
-            © ${new Date().getFullYear()}  <span style="font-weight:700;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span>. All rights reserved.
+            © ${year}
+            <span style="font-weight:800;color:#111827;">Shop</span><span style="font-weight:800;color:#F59E0B;">Kart</span>.
+            <span style="color:#6B7280">All rights reserved.</span>
           </div>
         </td>
       </tr>
@@ -122,7 +127,7 @@ router.post('/signup/initiate', async (req, res) => {
   try {
     const nameRaw = String(req.body?.name || '');
     const emailRaw = String(req.body?.email || '');
-    const passwordRaw = String(req.body?.password || '');
+    the passwordRaw = String(req.body?.password || '');
 
     const name = nameRaw.trim();
     const email = emailRaw.trim().toLowerCase();
