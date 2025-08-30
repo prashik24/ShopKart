@@ -4,30 +4,54 @@ import { config } from '../config.js';
 import { User } from '../models/User.js';
 
 export function signSession(user){
-  const token = jwt.sign({ uid: user._id.toString() }, config.jwt.secret, {
+  return jwt.sign({ uid: user._id.toString() }, config.jwt.secret, {
     expiresIn: `${config.jwt.expiresDays}d`
   });
-  return token;
 }
 
+/**
+ * Sets the auth cookie for cross-site usage (frontend.onrender.com -> backend.onrender.com)
+ * Requires: SameSite=None; Secure; Partitioned
+ */
 export function setAuthCookie(res, token){
-  // Cross-site between frontend.onrender.com <-> backend.onrender.com
-  // requires SameSite=None and Secure=true
-  res.cookie(config.jwt.cookieName, token, {
+  const opts = {
     httpOnly: true,
-    sameSite: 'none',        // <-- important for cross-site
-    secure: true,            // <-- required on HTTPS (Render uses HTTPS)
+    sameSite: 'none',            // cross-site
+    secure: true,                // Render is HTTPS
+    partitioned: true,           // CHIPS (Partitioned cookies)
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
-    path: '/'
-  });
+    path: '/',
+  };
+
+  // Primary (supported on recent cookie libraries)
+  res.cookie(config.jwt.cookieName, token, opts);
+
+  // Fallback: force the Partitioned attribute if the lib ignores `partitioned`
+  // (harmless duplicate; header will be merged/overwritten by frameworks that support it)
+  try {
+    const maxAge = opts.maxAge;
+    res.append('Set-Cookie',
+      `${encodeURIComponent(config.jwt.cookieName)}=${encodeURIComponent(token)}; ` +
+      `Path=/; Max-Age=${Math.floor(maxAge/1000)}; HttpOnly; Secure; SameSite=None; Partitioned`
+    );
+  } catch {}
 }
 
 export function clearAuthCookie(res){
-  res.clearCookie(config.jwt.cookieName, {
+  const opts = {
     path: '/',
     sameSite: 'none',
     secure: true,
-  });
+    partitioned: true,
+  };
+  res.clearCookie(config.jwt.cookieName, opts);
+
+  // Fallback header to ensure removal in older stacks
+  try {
+    res.append('Set-Cookie',
+      `${encodeURIComponent(config.jwt.cookieName)}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=None; Partitioned`
+    );
+  } catch {}
 }
 
 /** Strict guard — 401 if not authenticated */
@@ -36,13 +60,13 @@ export async function requireUser(req, res, next){
     const token = req.cookies?.[config.jwt.cookieName];
     if(!token) return res.status(401).json({ error: 'Unauthorized' });
 
-    const payload = jwt.verify(token, config.jwt.secret);
-    const user = await User.findById(payload.uid).lean();
+    const { uid } = jwt.verify(token, config.jwt.secret);
+    const user = await User.findById(uid).lean();
     if(!user) return res.status(401).json({ error: 'Unauthorized' });
 
     req.user = user;
     next();
-  }catch(err){
+  }catch{
     return res.status(401).json({ error: 'Unauthorized' });
   }
 }
@@ -51,12 +75,12 @@ export async function requireUser(req, res, next){
 export async function maybeUser(req, _res, next){
   try{
     const token = req.cookies?.[config.jwt.cookieName];
-    if(!token) return next();
-
-    const payload = jwt.verify(token, config.jwt.secret);
-    const user = await User.findById(payload.uid).lean();
-    if (user) req.user = user;
-  }catch(_e){
+    if(token){
+      const { uid } = jwt.verify(token, config.jwt.secret);
+      const user = await User.findById(uid).lean();
+      if (user) req.user = user;
+    }
+  }catch{
     // ignore invalid cookies
   }
   next();
