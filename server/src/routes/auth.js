@@ -9,7 +9,7 @@ import { signSession, setAuthCookie, clearAuthCookie } from '../middleware/auth.
 
 const router = Router();
 
-/** Small helper to shape user sent to client */
+/** Shape user for client */
 function toClientUser(u) {
   return {
     id: u._id,
@@ -20,12 +20,103 @@ function toClientUser(u) {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/* -----------------  OTP EMAIL (brand-styled, no images) ----------- */
+/* ------------------------------------------------------------------ */
+
+function buildOtpEmail({ name, email, otp }) {
+  const safe = (s = '') =>
+    String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+  // Render OTP as spaced digits for readability
+  const prettyOtp = safe(otp).split('').join(' ');
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verify your email</title>
+  </head>
+  <body style="margin:0;padding:0;background:#F9FAFB;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#F9FAFB;">
+      <tr>
+        <td align="center" style="padding:24px 12px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border-radius:12px;border:1px solid #F3F4F6;">
+            <tr>
+              <td style="padding:20px 24px 8px 24px;">
+                <!-- Brand text (no image) -->
+                <div style="font:800 20px/1 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111827;">
+                  Shop<span style="color:#F59E0B">Kart</span>
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:4px 24px 0 24px;">
+                <h1 style="margin:12px 0 8px 0;font:700 22px/1.3 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111827;">
+                  Verify your email
+                </h1>
+                <p style="margin:0 0 10px 0;font:400 14px/1.7 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#374151;">
+                  Hi ${safe(name)}, use this one-time code to finish creating your ShopKart account for
+                  <strong>${safe(email)}</strong>.
+                </p>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 24px 4px 24px;">
+                <!-- OTP block -->
+                <div style="text-align:center;margin:12px 0 6px;">
+                  <div style="
+                    display:inline-block;
+                    background:#111827;
+                    color:#ffffff;
+                    font:700 28px/1 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+                    letter-spacing:6px;
+                    border-radius:12px;
+                    padding:14px 18px;">
+                    ${prettyOtp}
+                  </div>
+                </div>
+                <div style="text-align:center;margin:6px 0 0 0;font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#6B7280;">
+                  This code expires in 10 minutes.
+                </div>
+              </td>
+            </tr>
+
+            <tr>
+              <td style="padding:18px 24px 22px 24px;">
+                <div style="font:400 12px/1.7 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#6B7280;">
+                  If you didn’t request this, you can safely ignore this email.
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <div style="max-width:640px;padding:14px 10px 0 10px;font:400 12px/1.6 'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#9CA3AF;">
+            © ${new Date().getFullYear()} Shop<span style="font-weight:700;color:#111827;">Kart</span>. All rights reserved.
+          </div>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* ---------------------------  ROUTES  ----------------------------- */
+/* ------------------------------------------------------------------ */
+
 /**
  * POST /api/auth/signup/initiate
  * body: { name, email, password }
- * - If user exists -> 409
- * - Create/overwrite OTP token, email OTP
- * - IMPORTANT: returns { email } so the client can navigate to /verify-otp
+ * - If user exists -> 409 (Already registered)
+ * - Creates/overwrites an OTP signup token and sends styled email
+ * - Returns { email } so the client can immediately route to /verify-otp
  */
 router.post('/signup/initiate', async (req, res) => {
   try {
@@ -41,59 +132,28 @@ router.post('/signup/initiate', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Email required' });
     if (!password || password.length < 6) return res.status(400).json({ error: 'Password too short' });
 
+    // If already registered, tell the client (they can show "Already registered — log in")
     const exists = await User.findOne({ email }).lean();
     if (exists) return res.status(409).json({ error: 'Already registered' });
 
-    // Remove any previous pending tokens for this email
+    // Overwrite any older pending tokens for this email
     await SignupToken.deleteMany({ email });
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const otp = generateOtp(); // 6-digit code
+    const otp = generateOtp(); // 6-digit numeric code
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await SignupToken.create({ email, name, passwordHash, otp, expiresAt });
 
-    // Styled email (no external images)
-    const html = `
-      <div style="font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#f8fafc;padding:24px">
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e5e7eb">
-          <tr>
-            <td style="padding:18px 22px;border-bottom:1px solid #e5e7eb">
-              <div style="font-size:20px;font-weight:800;letter-spacing:.4px;color:#111827">
-                <span style="color:#111827">Shop</span><span style="color:#ef4444">Kart</span>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:22px">
-              <h1 style="margin:0 0 10px;font-size:20px;color:#111827">Verify your email</h1>
-              <p style="margin:0 0 14px;color:#374151">Hi ${name}, use this one-time code to finish creating your ShopKart account:</p>
-              <div style="text-align:center;margin:18px 0 10px">
-                <div style="display:inline-block;background:#111827;color:#fff;font-weight:700;font-size:26px;letter-spacing:4px;border-radius:12px;padding:12px 18px">
-                  ${otp}
-                </div>
-              </div>
-              <p style="margin:10px 0 0;color:#6b7280;font-size:14px">This code expires in 10 minutes. If you didn’t request this, you can safely ignore this email.</p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:14px 22px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:12px">
-              © ${new Date().getFullYear()} ShopKart
-            </td>
-          </tr>
-        </table>
-      </div>`;
-
-    const text = `Your ShopKart sign-up code is: ${otp} (valid 10 minutes)`;
-
+    // Send brand-styled OTP email
     await sendEmail({
       to: email,
       subject: 'Your ShopKart verification code',
-      html,
-      text
+      html: buildOtpEmail({ name, email, otp }),
+      text: `Your ShopKart verification code is ${otp}. It expires in 10 minutes.`
     });
 
-    // 👇 return the email so the frontend can route to /verify-otp?email=...
+    // Let the client route to /verify-otp right away
     return res.json({ ok: true, email });
   } catch (err) {
     console.error('[signup/initiate] error:', err);
@@ -104,7 +164,7 @@ router.post('/signup/initiate', async (req, res) => {
 /**
  * POST /api/auth/signup/verify
  * body: { email, otp }
- * - If token valid -> create user, log in (set cookie), delete token
+ * - If token valid -> create user, log in (cookie), delete token
  */
 router.post('/signup/verify', async (req, res) => {
   try {
@@ -151,7 +211,6 @@ router.post('/signup/verify', async (req, res) => {
 /**
  * POST /api/auth/login
  * body: { email, password }
- * - Validate & set cookie
  */
 router.post('/login', async (req, res) => {
   try {
