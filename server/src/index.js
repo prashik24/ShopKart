@@ -9,16 +9,21 @@ import { maybeUser } from './middleware/auth.js';
 
 const app = express();
 
+/** Trust Render/Proxy so secure cookies work */
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '1mb' }));
 app.use(cookieParser());
+
+/** CORS: allow ONLY your frontend; send cookies */
 app.use(cors({
-  origin: config.clientOrigin,     // e.g. http://localhost:5173
+  origin: config.clientOrigin,      // e.g. https://your-frontend.onrender.com
   credentials: true
 }));
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
-// NEW: soft session probe – always 200, returns { user: null } if not logged in
+/** Soft session probe — always 200, returns { user: null } when logged out */
 app.get('/api/session', maybeUser, (req, res) => {
   if (!req.user) return res.json({ user: null });
   const u = req.user;
@@ -30,8 +35,8 @@ app.get('/api/session', maybeUser, (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/me', meRoutes);
 
-// 404
-app.use((req, res) => res.status(404).json({ error: 'Not found' }));
+/** 404 */
+app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
 await connectDb();
 app.listen(config.port, () => {

@@ -10,17 +10,24 @@ export function signSession(user){
 }
 
 export function setAuthCookie(res, token){
+  // Use secure cross-site cookies in production (Render uses HTTPS)
+  const isProd = process.env.NODE_ENV === 'production';
   res.cookie(config.jwt.cookieName, token, {
     httpOnly: true,
-    sameSite: 'lax',
-    secure: false,              // set true when served over HTTPS in production
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd, // must be true for SameSite=None
     maxAge: config.jwt.expiresDays * 24 * 60 * 60 * 1000,
     path: '/'
   });
 }
 
 export function clearAuthCookie(res){
-  res.clearCookie(config.jwt.cookieName, { path: '/' });
+  const isProd = process.env.NODE_ENV === 'production';
+  res.clearCookie(config.jwt.cookieName, {
+    path: '/',
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd
+  });
 }
 
 /** Strict guard — 401 if not authenticated */
@@ -35,7 +42,7 @@ export async function requireUser(req, res, next){
 
     req.user = user;
     next();
-  }catch(err){
+  }catch(_err){
     return res.status(401).json({ error: 'Unauthorized' });
   }
 }
