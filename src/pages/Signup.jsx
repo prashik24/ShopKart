@@ -20,13 +20,14 @@ export default function Signup() {
     e.preventDefault();
 
     const problems = [];
-    const nameTrim = form.name.trim();
+    const nameTrim  = form.name.trim();
+    const emailTrim = form.email.trim();
 
     if (!nameTrim) problems.push("name is missing");
     else if (nameTrim.length < 2) problems.push("name is too short");
 
-    if (!form.email) problems.push("email is missing");
-    else if (!emailOk(form.email)) problems.push("email is invalid");
+    if (!emailTrim) problems.push("email is missing");
+    else if (!emailOk(emailTrim)) problems.push("email is invalid");
 
     if (!form.password) problems.push("password is missing");
     else if (form.password.length < 6) problems.push("password must be at least 6 characters");
@@ -40,19 +41,17 @@ export default function Signup() {
     setSending(true);
 
     try {
-      const { email } = await signupInitiate({
-        name: nameTrim,
-        email: form.email.trim(),
-        password: form.password,
-      });
+      // ✅ Save everything so OTP page can "Resend" with the full payload
+      const pending = { name: nameTrim, email: emailTrim, password: form.password };
+      sessionStorage.setItem("sk_pending_email", emailTrim);
+      sessionStorage.setItem("sk_pending_payload", JSON.stringify(pending));
 
-      // Save email so OTP page can use it even on refresh
-      sessionStorage.setItem("sk_pending_email", email);
+      const { email } = await signupInitiate(pending);
 
-      // ✅ Only redirect if backend says signup started
+      // Only redirect if backend says signup started
       navigate(`/verify-otp?email=${encodeURIComponent(email)}`, { replace: true });
     } catch (err) {
-      if (err.message.includes("Already registered")) {
+      if (String(err.message || "").includes("Already registered")) {
         setError("This email is already registered. Please login instead.");
       } else {
         setError(err.message || "Unable to start sign up");

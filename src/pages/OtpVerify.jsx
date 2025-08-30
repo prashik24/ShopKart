@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
-import { api } from "../api/client.js";
 import "../styles/auth.css";
 
 /**
@@ -15,11 +14,16 @@ const BOXES = 6;
 export default function OtpVerify() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const { verifySignupOtp } = useAuth();
+  const { verifySignupOtp, signupInitiate } = useAuth(); // ⬅️ include signupInitiate
 
   // email from URL or session (session survives refresh)
+  let pendingPayload = null;
+  try {
+    pendingPayload = JSON.parse(sessionStorage.getItem("sk_pending_payload") || "null");
+  } catch {}
   const initialEmail =
     params.get("email") ||
+    pendingPayload?.email ||
     sessionStorage.getItem("sk_pending_email") ||
     "";
 
@@ -80,7 +84,7 @@ export default function OtpVerify() {
       return;
     }
     if (otp.length !== BOXES) {
-      setError("Enter the 6‑digit code.");
+      setError("Enter the 6-digit code.");
       return;
     }
 
@@ -97,12 +101,24 @@ export default function OtpVerify() {
 
   const resend = async () => {
     setError("");
+    if (secs > 0 || resending) return;
+
+    // ✅ Use the full payload saved by Signup.jsx
+    if (!pendingPayload?.email || !pendingPayload?.name || !pendingPayload?.password) {
+      setError("We don't have your sign-up details to resend the code. Please start again.");
+      return;
+    }
+
     setResending(true);
     try {
-      await api.signupInitiate({ name: "", email, password: "" });
-      setSecs(30);
+      await signupInitiate(pendingPayload);
+      setSecs(30); // reset cooldown
     } catch (e) {
-      setError(e?.message || "Could not resend code");
+      if (String(e.message || "").toLowerCase().includes("already")) {
+        setError("This email is already registered. Please log in.");
+      } else {
+        setError(e?.message || "Could not resend code");
+      }
     } finally {
       setResending(false);
     }
@@ -153,7 +169,7 @@ export default function OtpVerify() {
       <form className="auth-card" onSubmit={submit} noValidate>
         <h2>Verify your email</h2>
         <div className="auth-note">
-          We sent a 6‑digit code to <b>{email || "your email"}</b>.
+          We sent a 6-digit code to <b>{email || "your email"}</b>.
         </div>
         {error && (
           <div className="auth-note err" aria-live="polite">
