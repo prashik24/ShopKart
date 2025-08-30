@@ -1,10 +1,19 @@
 import 'dotenv/config';
 
+const isProd = process.env.NODE_ENV === 'production';
+const localDefault = 'mongodb://127.0.0.1:27017/shopkart';
+
+// In production, DO NOT fall back to localhost.
+const mongoUri =
+  process.env.MONGODB_URI ||
+  (isProd ? '' : localDefault);
+
 export const config = {
+  isProd,
   port: Number(process.env.PORT || 4000),
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
 
-  mongoUri: process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/shopkart',
+  mongoUri,
 
   jwt: {
     secret: process.env.JWT_SECRET || 'dev-secret',
